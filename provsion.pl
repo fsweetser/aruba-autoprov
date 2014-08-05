@@ -82,16 +82,16 @@ sub provision_ap {
 ##    );
 sub get_aplist {
     my %aps = (
-	'18:64:72:cb:7b:de' => {
-	    'name' => 'sb-214-a',
+	'11:22:33:44:55:66' => {
+	    'name' => 'dorm-100-a',
 	    'apgroup' => 'residential'
 	},
-	'18:64:72:cb:7c:28' => {
-	    'name' => 'sb-216-a',
+	'22:33:44:55:66:77' => {
+	    'name' => 'dorm-200-a',
 	    'apgroup' => 'residential'
 	},
-	'18:64:72:cb:7b:bc' => {
-	    'name' => 'sb-201-a',
+	'33:44:55:66:77:88' => {
+	    'name' => 'dorm-300-a',
 	    'apgroup' => 'residential'
 	}
 	);
