@@ -259,7 +259,7 @@ foreach my $mac (sort keys %{$queue{'prov'}}){
     }
 }
 
-print Dumper(\%queue);
+print Dumper(\%queue) if $debug;
 
 print "", scalar keys %{$queue{'prov'}}, " provisioning queue entries\n";
 while(scalar keys %{$queue{'prov'}} > 0){
