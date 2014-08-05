@@ -4,6 +4,7 @@ use strict;
 
 use Net::SSH::Expect;
 use Text::CSV;
+use Term::ReadPassword;
 use Getopt::Long;
 use Data::Dumper;
 
@@ -19,7 +20,7 @@ my $master = 'aruba-master';
 my $user   = 'admin';
 my $pass;
 my $enpass;
-
+my $enbypass;
 my $want_state = 'certified-factory-cert';
 my $want_certtype = 'factory-cert';
 my $file = "./waps.csv";
@@ -38,10 +39,15 @@ Command line options:
     Username to log in as.  Defaults to admin.
 
 --pass=<password>
-    Password for logging in.
+    Password for logging in.  You will be prompted if this is not set.
 
 --enpass=<enable password>
-    Enable password.
+    Enable password.  You will be prompted if this is not set, unless you
+    also set the --enbypass option.
+
+--enbypass
+    Setting this will tell the script to assume that you have enable bypass
+    configured, and to not prompt for the enable password.
 
 --want_state=<state>
     Default state for cpsec whitelist.  Defaults to certified-factory-cert.
@@ -59,12 +65,19 @@ GetOptions (
     "user=s"          => \$user,
     "pass=s"          => \$pass,
     "enpass=s"        => \$enpass,
+    "enbypass"        => \$enbypass,
     "want_state=s"    => \$want_state,
     "want_certtype=s" => \$want_certtype,
     "debug"           => \$debug
     ) or die $usage;
 
-die $usage unless(defined($pass) and defined($enpass));
+unless($pass){
+    $pass = read_password("Please enter login password: ");
+}
+
+unless(defined($enpass) or $enbypass){
+    $enpass = read_password("Please enter enable password: ");
+}
 
 my $aps = get_aplist($file);
 
@@ -155,11 +168,16 @@ my $ssh = Net::SSH::Expect->new(
 
 my $login_output = $ssh->login;
 if ($login_output =~ /\) >/){
+    unless(defined($enpass)){
+	die "No enable password passed - please pass one or set enable bypass on the controller\n";
+    }
     warn "Login succesfull, running enable\n";
     $ssh->send("enable");
     $ssh->waitfor("Password:");
     $ssh->send($enpass);
     $ssh->waitfor('\) #\z', 5) or die "Could not enable";
+} elsif ($login_output =~ /\) #/){
+    warn "Login succesful and enable bypass detected, proceeding without enable\n" if $debug;
 } else {
     die "Could not login: $login_output";
 }
@@ -255,6 +273,7 @@ while(scalar keys %{$queue{'prov'}} > 0){
 	    $apdb->{$mac}{'apgroup'} eq $aps->{$mac}{'apgroup'}){
 	    print "$mac provisioning status succesfull\n";
 	    delete $queue{'prov'}{$mac};
+	    delete $aps->{$mac};
 	} else {
 	    if($queue{'prov'}{$mac} == 0){
 		provision_ap($ssh, $mac, $aps->{$mac}{'name'}, $aps->{$mac}{'apgroup'});
