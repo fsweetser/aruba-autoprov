@@ -4,6 +4,7 @@ use strict;
 
 use Net::SSH::Expect;
 use Text::CSV;
+use Getopt::Long;
 use Data::Dumper;
 
 $| = 1;
@@ -11,23 +12,61 @@ $| = 1;
 # Set this to 1 to get a few more output messages.
 my $debug = 0;
 
-my $file = "./waps.csv";
-my $aps = get_aplist($file);
 
 my %queue;
 
-
-#############################################
-##
-## You'll want to modify at least some of these variables.
-##
 my $master = 'aruba-master';
 my $user   = 'admin';
-my $pass   = 'login-password';
-my $enpass = 'enable-password';
+my $pass;
+my $enpass;
 
 my $want_state = 'certified-factory-cert';
 my $want_certtype = 'factory-cert';
+my $file = "./waps.csv";
+
+my $usage = qq(
+Command line options:
+
+--file=<filename>
+    CSV file to parse AP data from.  Defaults to waps.csv.
+
+--master=<master>
+    Hostname or IP address of controller to configure.
+    Defaults to aruba-master.
+
+--user=<username>
+    Username to log in as.  Defaults to admin.
+
+--pass=<password>
+    Password for logging in.
+
+--enpass=<enable password>
+    Enable password.
+
+--want_state=<state>
+    Default state for cpsec whitelist.  Defaults to certified-factory-cert.
+
+--want_certtype=type>
+    Default cert type for cpsec whitelist.  Dfeaults to factory-cert.
+
+--debug
+    Enable additional debug output.
+);
+
+GetOptions (
+    "file=s"          => \$file,
+    "master=s"        => \$master,
+    "user=s"          => \$user,
+    "pass=s"          => \$pass,
+    "enpass=s"        => \$enpass,
+    "want_state=s"    => \$want_state,
+    "want_certtype=s" => \$want_certtype,
+    "debug"           => \$debug
+    ) or die $usage;
+
+die $usage unless(defined($pass) and defined($enpass));
+
+my $aps = get_aplist($file);
 
 ##
 ## Customizable policy functions.  Hit these up to apply local site policies.
