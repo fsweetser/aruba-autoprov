@@ -3,15 +3,19 @@
 use strict;
 
 use Net::SSH::Expect;
+use Text::CSV;
 use Data::Dumper;
+
+$| = 1;
 
 # Set this to 1 to get a few more output messages.
 my $debug = 0;
 
-my $aps = get_aplist();
+my $file = "./waps.csv";
+my $aps = get_aplist($file);
 
 my %queue;
-$| = 1;
+
 
 #############################################
 ##
@@ -81,20 +85,18 @@ sub provision_ap {
 ##	}
 ##    );
 sub get_aplist {
-    my %aps = (
-	'11:22:33:44:55:66' => {
-	    'name' => 'dorm-100-a',
-	    'apgroup' => 'residential'
-	},
-	'22:33:44:55:66:77' => {
-	    'name' => 'dorm-200-a',
-	    'apgroup' => 'residential'
-	},
-	'33:44:55:66:77:88' => {
-	    'name' => 'dorm-300-a',
-	    'apgroup' => 'residential'
-	}
-	);
+    my ($file) = @_;
+    my %aps;
+
+    print "Parsing $file\n";
+
+    my $csv = Text::CSV->new;
+    open(my $fh, "<$file") or die "Cannot open $file: $!\n";
+
+    while(my $row = $csv->getline($fh)){
+	$aps{$row->[0]}{'name'} = $row->[1];
+	$aps{$row->[0]}{'apgroup'} = $row->[2];
+    }
 
     return \%aps;
 }
