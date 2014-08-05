@@ -146,6 +146,17 @@ sub get_aplist {
     open(my $fh, "<$file") or die "Cannot open $file: $!\n";
 
     while(my $row = $csv->getline($fh)){
+	unless ($row->[0] and
+		$row->[1] and
+		$row->[2]) {
+	    print "Skipping CSV line with missing entries\n";
+	    next;
+	}
+	unless($row->[0] =~ /^[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}:[0-9a-f]{2}$/){
+	    print "Skipping invalid MAC address ", $row->[0], "\n";
+	    next;
+	}
+
 	$aps{$row->[0]}{'name'} = $row->[1];
 	$aps{$row->[0]}{'apgroup'} = $row->[2];
     }
